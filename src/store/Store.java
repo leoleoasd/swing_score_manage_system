@@ -35,24 +35,18 @@ public class Store implements Serializable {
     }
 
     public StudentTableModel getStudentTableModel(){
-        return new StudentTableModel(this.students);
+        return new StudentTableModel();
     }
 
     public CourseTableModel getCourseTableModel(){
-        return new CourseTableModel(this.courses);
+        return new CourseTableModel();
     }
 
     public ScoresTableModel getScoresTableModel() {
-        return new ScoresTableModel(this.students);
+        return new ScoresTableModel();
     }
 
     class StudentTableModel extends AbstractTableModel {
-        protected ArrayList<Student> students;
-
-        public StudentTableModel(ArrayList<Student> students){
-            this.students = students;
-        }
-
         @Override
         public int getRowCount() {
             return students.size();
@@ -135,11 +129,6 @@ public class Store implements Serializable {
     }
 
     class CourseTableModel extends AbstractTableModel {
-        protected ArrayList<Course> courses;
-
-        public CourseTableModel(ArrayList<Course> courses){
-            this.courses = courses;
-        }
 
         @Override
         public int getRowCount() {
@@ -200,12 +189,6 @@ public class Store implements Serializable {
     }
 
     class ScoresTableModel extends AbstractTableModel {
-        protected ArrayList<Student> students;
-
-        public ScoresTableModel(ArrayList<Student> students){
-            this.students = students;
-        }
-
         Student getStudentFromRow(int row){
             for(Student s:students){
                 if(row < s.getScores().size()){

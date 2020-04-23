@@ -7,14 +7,13 @@ import store.Store;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import javax.swing.event.TableModelEvent;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,20 +29,8 @@ public class MainFrame extends JFrame{
     public MainFrame(){
         super("成绩管理系统");
         store = new Store();
-        store.setStudents(new ArrayList<Student>(Arrays.asList(
-                new Student(1, "a", "计算机科学", new Date()),
-                new Student(2, "b", "计算机科学", new Date()),
-                new Student(3, "c", "计算机科学", new Date()),
-                new Student(4, "d", "计算机科学", new Date()),
-                new Student(5, "e", "计算机科学", new Date())
-        )));
-        store.setCourses(new ArrayList<Course>(
-                Arrays.asList(
-                        new Course("语文","语文老师"),
-                        new Course("数学","数学老师"),
-                        new Course("英语","英语老师")
-                )
-        ));
+        store.setStudents(new ArrayList<Student>());
+        store.setCourses(new ArrayList<Course>());
         students = new StudentsTable(store, this);
         courses = new CoursesTable(store, this);
         scores = new AllScoreTable(store, this);
@@ -73,9 +60,99 @@ public class MainFrame extends JFrame{
         JPanel panel = new JPanel();
         panel.add(tab);
 
+
+        //Create the menu bar.
+        JMenuBar menuBar = new JMenuBar();
+
+        //Build the first menu.
+        JMenu menu = new JMenu("文件");
+        menuBar.add(menu);
+
+        JMenuItem create = new JMenuItem("新建");
+        create.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                if(JOptionPane.showConfirmDialog(MainFrame.this, "将会丢失所有未保存的更改, 是否继续?") == 0){
+                    store.setStudents(new ArrayList<Student>());
+                    store.setCourses(new ArrayList<Course>());
+                }
+            }
+        });
+        menu.add(create);
+        menu.add(new JSeparator());
+
+        JMenuItem open = new JMenuItem("打开");
+        final JFileChooser fc = new JFileChooser();
+        fc.setFileFilter(new FileNameExtensionFilter("Database files","dat"));
+        open.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {//Create a file chooser
+                if(JOptionPane.showConfirmDialog(MainFrame.this, "将会丢失所有未保存的更改, 是否继续?") == 0){
+                    int ret = fc.showOpenDialog(MainFrame.this);
+                    if(ret == JFileChooser.APPROVE_OPTION){
+                        try {
+                            ObjectInputStream r = new ObjectInputStream(new FileInputStream(fc.getSelectedFile()));
+                            Store n = (Store) r.readObject();
+                            store.setCourses(n.getCourses());
+                            store.setStudents(n.getStudents());
+                            triggerDataChanged();
+                            JOptionPane.showMessageDialog(null, "读取成功!");
+                        } catch (IOException | ClassNotFoundException exception) {
+                            exception.printStackTrace();
+                            JOptionPane.showMessageDialog(null, "读取成功:"+exception.getMessage());
+                        }
+                    }
+                }
+
+            }
+        });
+        menu.add(open);
+        JMenuItem save = new JMenuItem("保存");
+        final JFileChooser fc2 = new JFileChooser();
+        fc2.setFileFilter(new FileNameExtensionFilter("Database files","dat"));
+        fc2.setSelectedFile(new File("data.dat"));
+        save.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int ret = fc2.showSaveDialog(MainFrame.this);
+                if(ret == JFileChooser.APPROVE_OPTION){
+                    System.out.println("Saving to "+fc2.getSelectedFile());
+                    try {
+                        ObjectOutputStream w = new ObjectOutputStream(new FileOutputStream(fc2.getSelectedFile()));
+                        w.writeObject(store);
+                        JOptionPane.showMessageDialog(null, "保存成功!");
+                    } catch (IOException ioException) {
+                        ioException.printStackTrace();
+                        JOptionPane.showMessageDialog(null, "保存失败:"+ioException.getMessage());
+                    }
+                }
+            }
+        });
+        menu.add(save);
+        menu.add(new JSeparator());
+        JMenuItem exit = new JMenuItem("退出");
+        exit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(JOptionPane.showConfirmDialog(MainFrame.this, "是否保存") == 0){
+                    save.doClick();
+                }
+                System.exit(0);
+            }
+        });
+        menu.add(exit);
+
         super.getContentPane().add(panel);
         super.pack();
         super.setVisible(true);
+        super.setResizable(false);
+        super.setJMenuBar(menuBar);
+        super.addWindowListener(new WindowAdapter(){
+            public void windowClosing(WindowEvent e){
+                exit.doClick();
+            }
+        });
         super.setResizable(false);
     }
 
